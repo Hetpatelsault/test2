@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Authenticator Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+      width: 350px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #4CAF50;
+      color: white;
+      font-size: 16px;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    .cancel-btn {
+      background: #f44336;
+    }
+
+    .cancel-btn:hover {
+      background: #d32f2f;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .message {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .error {
+      color: red;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .dashboard {
+      text-align: center;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Welcome</h2>
+    <button onclick="showLogin()">Login</button>
+    <button onclick="showRegister()">Register</button>
+
+    <!-- Login Form -->
+    <form id="loginForm" class="hidden">
+      <h2>Login</h2>
+      <label for="loginUser">Username</label>
+      <input type="text" id="loginUser" placeholder="Enter username">
+      <label for="loginPass">Password</label>
+      <input type="password" id="loginPass" placeholder="Enter password">
+      <button type="button" onclick="login()">Login</button>
+      <button type="button" class="cancel-btn" onclick="cancelForm()">Cancel</button>
+      <div class="message" id="loginMessage"></div>
+    </form>
+
+    <!-- Registration Form -->
+    <form id="registerForm" class="hidden">
+      <h2>Register</h2>
+      <label for="regUser">Username</label>
+      <input type="text" id="regUser" placeholder="Enter username">
+      <label for="regPass">Password</label>
+      <input type="password" id="regPass" placeholder="Enter password">
+      <button type="button" onclick="register()">Register</button>
+      <button type="button" class="cancel-btn" onclick="cancelForm()">Cancel</button>
+      <div class="message" id="registerMessage"></div>
+    </form>
+
+    <!-- Simple Dashboard -->
+    <div id="dashboard" class="hidden dashboard">
+      <h2>Welcome, <span id="userName"></span>!</h2>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:5000";/*This is the backend server URL where login and register requests will go*/
+
+    function showLogin() {
+      document.getElementById("loginForm").classList.remove("hidden");
+      document.getElementById("registerForm").classList.add("hidden");
+      document.getElementById("dashboard").classList.add("hidden");
+    }
+
+    function showRegister() {
+      document.getElementById("registerForm").classList.remove("hidden");
+      document.getElementById("loginForm").classList.add("hidden");
+      document.getElementById("dashboard").classList.add("hidden");
+    }
+
+    function cancelForm() {
+      document.getElementById("loginForm").classList.add("hidden");
+      document.getElementById("registerForm").classList.add("hidden");
+      document.getElementById("dashboard").classList.add("hidden");
+    }
+    /*Get the username and password from input fields*/
+    async function login() {
+      const user = document.getElementById("loginUser").value;
+      const pass = document.getElementById("loginPass").value;
+      const message = document.getElementById("loginMessage");
+
+      if (!user || !pass) {
+        message.innerHTML = "Please fill in all fields.";
+        message.className = "message error";
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user, password: pass })
+      });
+
+      const data = await res.json();
+      message.innerHTML = data.message;
+      message.className = data.success ? "message success" : "message error";
+
+      if (data.success) {
+        showDashboard(user);
+      }
+    }
+    /*if function */
+    async function register() {
+      const user = document.getElementById("regUser").value;
+      const pass = document.getElementById("regPass").value;
+      const message = document.getElementById("registerMessage");
+      
+      if (!user || !pass) {
+        message.innerHTML = "Please fill all fields.";
+        message.className = "message error";
+        return;
+      }
+
+      if (pass.length < 6) {
+        message.innerHTML = "Password must be at least 6 characters.";
+        message.className = "message error";
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user, password: pass })
+      });
+
+      const data = await res.json();
+      message.innerHTML = data.message;
+      message.className = data.success ? "message success" : "message error";
+    }
+    /*Shows the dashboard.*/
+    function showDashboard(username) {
+      document.getElementById("dashboard").classList.remove("hidden");
+      document.getElementById("loginForm").classList.add("hidden");
+      document.getElementById("registerForm").classList.add("hidden");
+      document.getElementById("userName").innerText = username;
+    }
+
+    function logout() {
+      document.getElementById("dashboard").classList.add("hidden");
+      document.getElementById("loginForm").classList.remove("hidden");
+    }
+  </script>
+</body>
+</html>
