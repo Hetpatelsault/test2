@@ -90,6 +90,35 @@
       text-align: center;
     }
 
+    .like-btn, .dislike-btn {
+      width: 48%;
+      margin: 5px 1%;
+      font-size: 16px;
+    }
+
+    .like-btn {
+      background: #2196F3;
+      color: white;
+    }
+
+    .dislike-btn {
+      background: #f44336;
+      color: white;
+    }
+
+    .like-btn:hover {
+      background: #1976D2;
+    }
+
+    .dislike-btn:hover {
+      background: #d32f2f;
+    }
+
+    .counter {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
   </style>
 </head>
 <body>
@@ -122,15 +151,26 @@
       <div class="message" id="registerMessage"></div>
     </form>
 
-    <!-- Simple Dashboard -->
+    <!-- Dashboard -->
     <div id="dashboard" class="hidden dashboard">
       <h2>Welcome, <span id="userName"></span>!</h2>
+      
+      <!-- Like/Dislike Buttons -->
+      <div>
+        <button class="like-btn" onclick="like()"> Like</button>
+        <button class="dislike-btn" onclick="dislike()"> Dislike</button>
+      </div>
+      <div class="counter">
+        Likes: <span id="likeCount">0</span> | Dislikes: <span id="dislikeCount">0</span>
+      </div>
+
       <button onclick="logout()">Logout</button>
     </div>
   </div>
 
   <script>
-    const API_URL = "http://localhost:5000";/*This is the backend server URL where login and register requests will go*/
+    const API_URL = "http://localhost:5000";
+    let usernameGlobal = "";
 
     function showLogin() {
       document.getElementById("loginForm").classList.remove("hidden");
@@ -149,7 +189,7 @@
       document.getElementById("registerForm").classList.add("hidden");
       document.getElementById("dashboard").classList.add("hidden");
     }
-    /*Get the username and password from input fields*/
+
     async function login() {
       const user = document.getElementById("loginUser").value;
       const pass = document.getElementById("loginPass").value;
@@ -175,7 +215,7 @@
         showDashboard(user);
       }
     }
-    /*if function */
+
     async function register() {
       const user = document.getElementById("regUser").value;
       const pass = document.getElementById("regPass").value;
@@ -203,17 +243,52 @@
       message.innerHTML = data.message;
       message.className = data.success ? "message success" : "message error";
     }
-    /*Shows the dashboard.*/
+
     function showDashboard(username) {
+      usernameGlobal = username;
       document.getElementById("dashboard").classList.remove("hidden");
       document.getElementById("loginForm").classList.add("hidden");
       document.getElementById("registerForm").classList.add("hidden");
       document.getElementById("userName").innerText = username;
+
+      // Fetch current likes/dislikes
+      fetch(`${API_URL}/reactions/${username}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("likeCount").innerText = data.likes;
+          document.getElementById("dislikeCount").innerText = data.dislikes;
+        });
     }
 
     function logout() {
       document.getElementById("dashboard").classList.add("hidden");
       document.getElementById("loginForm").classList.remove("hidden");
+    }
+
+    function like() {
+      fetch(`${API_URL}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: usernameGlobal })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("likeCount").innerText = data.likes;
+        document.getElementById("dislikeCount").innerText = data.dislikes;
+      });
+    }
+
+    function dislike() {
+      fetch(`${API_URL}/dislike`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: usernameGlobal })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("likeCount").innerText = data.likes;
+        document.getElementById("dislikeCount").innerText = data.dislikes;
+      });
     }
   </script>
 </body>

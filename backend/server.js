@@ -4,21 +4,19 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const User = require("./models/User");
-/*app is the main server object.
+const Reaction = require("./models/Reaction");
 
-Lets the server understand JSON data sent by the client */
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-/*Connects to a local MongoDB database named authDemo.
-useNewUrlParser and useUnifiedTopology are options to avoid warnings */
+// Connect MongoDB
 mongoose.connect("mongodb://127.0.0.1:27017/authDemo", {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
 
-//  Register API
+// Register API
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.json({ success: false, message: "All fields required" });
@@ -34,12 +32,10 @@ app.post("/register", async (req, res) => {
   }
 });
 
-//  Login API
-/*Finds the user in the database by username */
+// Login API
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username });
-
   if (!user) return res.json({ success: false, message: "User not found" });
 
   const isMatch = await bcrypt.compare(password, user.password);
@@ -48,6 +44,35 @@ app.post("/login", async (req, res) => {
   res.json({ success: true, message: "Login successful" });
 });
 
-/*Starts the server on port 5000.
-Prints a message in the console when the server is running */
+// Reactions
+app.get("/reactions/:username", async (req, res) => {
+  const { username } = req.params;
+  let reaction = await Reaction.findOne({ username });
+  if (!reaction) {
+    reaction = new Reaction({ username });
+    await reaction.save();
+  }
+  res.json({ likes: reaction.likes, dislikes: reaction.dislikes });
+});
+
+app.post("/like", async (req, res) => {
+  const { username } = req.body;
+  const reaction = await Reaction.findOneAndUpdate(
+    { username },
+    { $inc: { likes: 1 } },
+    { new: true, upsert: true }
+  );
+  res.json({ likes: reaction.likes, dislikes: reaction.dislikes });
+});
+
+app.post("/dislike", async (req, res) => {
+  const { username } = req.body;
+  const reaction = await Reaction.findOneAndUpdate(
+    { username },
+    { $inc: { dislikes: 1 } },
+    { new: true, upsert: true }
+  );
+  res.json({ likes: reaction.likes, dislikes: reaction.dislikes });
+});
+
 app.listen(5000, () => console.log("✅ Server running on http://localhost:5000"));
